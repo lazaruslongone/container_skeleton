@@ -1,0 +1,59 @@
+#!/bin/bash
+set -eo pipefail
+
+C_NAME=$(echo "${PWD##*/}")
+
+# network name
+if [ -z $1 ]; then
+  echo "Provide a network name as the first argument"
+  exit 1
+else
+  C_NET="$1"
+fi
+
+# check for docker network
+if [ ! $(docker network inspect --format '{{ .Name }}' $C_NET) ]; then
+  echo "Docker network $C_NET does not exist, create it first"
+  exit 1
+fi
+
+# docker image name
+if [ -z $2 ]; then
+  echo "Provide a docker image name as the second argument"
+  exit 1
+else
+  C_IMAGE_NAME="$2"
+fi
+
+# docs
+: '
+**Customizing the `run` command:**
+
+There are a few things you may want to add to `docker run ...`,
+depending on what you are doing with the container
+
+  **volume mounts:**
+    -v /data/containers/$C_NAME/configs/ca.crt:/etc/openvpn/ca.crt
+    -v /data/containers/$C_NAME/configs/haproxy.cfg:/etc/haproxy/haproxy.cfg
+
+  **device mounts:**
+    --device /dev/net/tun
+
+  **custom capabilities:**
+    --cap-add=NET_ADMIN
+
+  **port mappings:**
+    port on container IP:
+      -p 80
+    port on host interfaces:
+      -p 80:80
+    port on specific host IP:
+      -p 10.20.30.1:80:80
+
+'
+
+# start the container
+docker run --detach \
+  --name $C_NAME \
+  --net=$C_NET \
+  $C_IMAGE_NAME

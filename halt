@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# container is assumed to match the folder name
+
+C_NAME=$(echo "${PWD##*/}")
+
+#stop
+docker stop $C_NAME
+
